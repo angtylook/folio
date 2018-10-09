@@ -16,7 +16,13 @@ func main() {
 		log.Println("create server fail")
 		return
 	}
-	s.Init()
+
+	err := s.Init()
+	if err != nil {
+		log.Println("init server fail %v", err)
+		return
+	}
+
 	go s.Run()
 
 	quit := make(chan os.Signal)

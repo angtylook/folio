@@ -15,7 +15,13 @@ func main() {
 		log.Println("create client fail")
 		return
 	}
-	c.Init()
+
+	err := c.Init()
+	if err != nil {
+		log.Println("init client fail %v", err)
+		return
+	}
+
 	go c.Run()
 
 	quit := make(chan os.Signal)
