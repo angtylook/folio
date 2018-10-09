@@ -10,7 +10,6 @@ import (
 const lengthByteSize = 2
 const writeQueueSize = 2048
 
-
 type MessageHandler interface {
 	OnMessage(msg []byte)
 }
@@ -34,8 +33,8 @@ type Connection struct {
 
 func NewConnection(c net.Conn, h MessageHandler) *Connection {
 	con := &Connection{
-		conn:    c,
-		handler: h,
+		conn:           c,
+		handler:        h,
 		readLenBuffer:  make([]byte, lengthByteSize, lengthByteSize),
 		writeLenBuffer: make([]byte, lengthByteSize, lengthByteSize),
 		writeQueue:     make(chan *writeMessage, writeQueueSize),
@@ -57,7 +56,6 @@ func (c *Connection) Start() {
 		}
 	}
 	c.wg.Wait()
-	close(c.done)
 }
 
 func (c *Connection) Stop() {
