@@ -4,6 +4,7 @@ import (
 	"encoding/binary"
 	"log"
 	"net"
+	"sync"
 )
 
 const lengthByteSize = 2
@@ -26,8 +27,9 @@ type Connection struct {
 	writeLenBuffer []byte
 
 	writeQueue chan *writeMessage
-
-	closed bool
+	closed     bool
+	done       chan bool
+	wg         sync.WaitGroup
 }
 
 func NewConnection(c net.Conn, h MessageHandler) *Connection {
@@ -38,6 +40,7 @@ func NewConnection(c net.Conn, h MessageHandler) *Connection {
 		writeLenBuffer: make([]byte, lengthByteSize, lengthByteSize),
 		writeQueue:     make(chan *writeMessage, writeQueueSize),
 		closed:         false,
+		done:           make(chan bool, 3),
 	}
 
 	return con
@@ -46,6 +49,23 @@ func NewConnection(c net.Conn, h MessageHandler) *Connection {
 func (c *Connection) Start() {
 	go c.ReadPump()
 	go c.WritePump()
+	select {
+	case <-c.done:
+		if !c.closed {
+			c.conn.Close()
+			c.closed = true
+		}
+	}
+	c.wg.Wait()
+	close(c.done)
+}
+
+func (c *Connection) Stop() {
+	c.done <- true
+}
+
+func (c *Connection) Closed() bool {
+	return c.closed
 }
 
 func (c *Connection) SendMessage(msg []byte) {
@@ -56,6 +76,7 @@ func (c *Connection) SendMessage(msg []byte) {
 }
 
 func (c *Connection) ReadPump() {
+	c.wg.Add(1)
 	for {
 		err := c.readBuffer(c.readLenBuffer)
 		if err != nil {
@@ -71,6 +92,8 @@ func (c *Connection) ReadPump() {
 		}
 		go c.handler.OnMessage(buffer)
 	}
+	c.done <- true
+	c.wg.Done()
 }
 
 func (c *Connection) readBuffer(buffer []byte) error {
@@ -89,6 +112,7 @@ func (c *Connection) readBuffer(buffer []byte) error {
 }
 
 func (c *Connection) WritePump() {
+	c.wg.Add(1)
 	for {
 		msg, ok := <-c.writeQueue
 		if !ok {
@@ -107,6 +131,8 @@ func (c *Connection) WritePump() {
 			break
 		}
 	}
+	c.done <- true
+	c.wg.Done()
 }
 
 func (c *Connection) writeBuffer(buffer []byte) error {
