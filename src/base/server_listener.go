@@ -2,6 +2,7 @@ package base
 
 import (
 	"fmt"
+	"log"
 	"net"
 )
 
@@ -27,7 +28,7 @@ func NewServerListener() *ServerListener {
 func (s *ServerListener) ListenAt(network, addr string) error {
 	l, err := net.Listen(network, addr)
 	if err != nil {
-		fmt.Printf("tcp listen on 2018 fail %v", err)
+		log.Printf("tcp listen on 2018 fail %v", err)
 		return fmt.Errorf("listen fail")
 	}
 	s.listener = l
@@ -40,7 +41,7 @@ func (s *ServerListener) Accept() {
 	for {
 		conn, err := s.listener.Accept()
 		if err != nil {
-			fmt.Printf("tcp accept error %v", err)
+			log.Printf("tcp accept error %v", err)
 			if s.stop {
 				break
 			} else {
@@ -50,7 +51,7 @@ func (s *ServerListener) Accept() {
 		if s.Handler != nil {
 			go s.Handler.Serve(conn)
 		}
-		fmt.Printf("new connection from %s", conn.RemoteAddr().String())
+		log.Printf("new connection from %s", conn.RemoteAddr().String())
 	}
 
 	s.listener.Close()

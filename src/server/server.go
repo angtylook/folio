@@ -1,7 +1,7 @@
 package server
 
 import (
-	"fmt"
+	//"fmt"
 	"log"
 	"net"
 
@@ -22,23 +22,24 @@ func NewServer() *Server {
 	return s
 }
 
-func (s *Server) Init() {
-	fmt.Println("server init")
+func (s *Server) Init() error {
+	log.Println("server init")
 	s.listener.ListenAt("tcp", ":2018")
+	return nil
 }
 
 func (s *Server) Run() {
-	fmt.Println("server serve")
+	log.Println("server serve")
 }
 
 func (s *Server) Stop() {
-	fmt.Println("server stop")
+	log.Println("server stop")
 	s.listener.StopListen()
 	s.conn.Stop()
 }
 
 func (s *Server) Serve(conn net.Conn) {
-	fmt.Println("Serve conn")
+	log.Println("Serve conn")
 	s.conn = base.NewConnection(conn, s)
 	go s.conn.Start()
 	s.conn.SendMessage([]byte("hello"))

@@ -1,7 +1,7 @@
 package main
 
 import (
-	"fmt"
+	"log"
 	"os"
 	"os/signal"
 
@@ -9,9 +9,11 @@ import (
 )
 
 func main() {
+	log.SetFlags(log.LstdFlags | log.Lshortfile)
+
 	s := server.NewServer()
 	if s == nil {
-		fmt.Println("create server fail")
+		log.Println("create server fail")
 		return
 	}
 	s.Init()
