@@ -1,5 +1,9 @@
 package base
 
+import (
+	"time"
+)
+
 type Closure func()
 
 type ExecutorStopOpt bool
@@ -8,6 +12,10 @@ const (
 	StopOptDiscard = false
 	StopOptRunAll  = true
 )
+
+type Framer interface {
+	Frame()
+}
 
 type Executor struct {
 	tasks chan Closure
@@ -56,6 +64,34 @@ func (e *Executor) Start() {
 		}
 	}
 
+}
+
+func (e *Executor) StartWithFrame(framer Framer, d time.Duration) {
+	ticker := time.NewTicker(d)
+	defer func() {
+		ticker.Stop()
+		close(e.stop)
+	}()
+
+	for {
+		select {
+		case <-ticker.C:
+			framer.Frame()
+		case task, ok := <-e.tasks:
+			if ok && task != nil {
+				task()
+			}
+		case opt := <-e.stop:
+			if opt != StopOptRunAll {
+				return
+			}
+
+			for task := range e.tasks {
+				task()
+			}
+			return
+		}
+	}
 }
 
 func (e *Executor) Stop(opt ExecutorStopOpt) {
