@@ -2,6 +2,7 @@ package server
 
 import (
 	"fmt"
+	"log"
 	"net"
 
 	"base"
@@ -9,6 +10,7 @@ import (
 
 type Server struct {
 	listener *base.ServerListener
+	conn     *base.Connection
 }
 
 func NewServer() *Server {
@@ -32,10 +34,17 @@ func (s *Server) Run() {
 func (s *Server) Stop() {
 	fmt.Println("server stop")
 	s.listener.StopListen()
+	s.conn.Stop()
 }
 
 func (s *Server) Serve(conn net.Conn) {
 	fmt.Println("Serve conn")
-	conn.Write([]byte("hello"))
-	conn.Close()
+	s.conn = base.NewConnection(conn, s)
+	go s.conn.Start()
+	s.conn.SendMessage([]byte("hello"))
+}
+
+func (s *Server) OnMessage(msg []byte) {
+	log.Println(string(msg))
+	s.conn.SendMessage([]byte("pong"))
 }

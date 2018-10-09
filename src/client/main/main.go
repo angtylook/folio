@@ -2,41 +2,26 @@ package main
 
 import (
 	"fmt"
+	"log"
+	"os"
+	"os/signal"
 
-	"base"
+	"client"
 )
 
 func main() {
-	e1 := base.NewExecutor(10)
-	e2 := base.NewExecutor(10)
-	go e1.Start()
-	go e2.Start()
-
-	e1.Dispatch(func() {
-		fmt.Println("Dispatch on e1")
-	})
-	fmt.Println("after dispatch e1")
-
-	e2.Dispatch(func() {
-		fmt.Println("Dispatch on e2")
-	})
-	fmt.Println("after dispatch e2")
-
-	for i := 0; i < 10; i++ {
-		v := i
-		e1.Post(func() {
-			fmt.Printf("post on e1 ==> %d \n", v)
-		})
-
-		e2.Post(func() {
-			fmt.Printf("post on e2 ==> %d \n", v)
-		})
+	log.SetFlags(log.LstdFlags | log.Lshortfile)
+	c := client.NewClient()
+	if c == nil {
+		fmt.Println("create client fail")
+		return
 	}
-	fmt.Println("after post")
+	c.Init()
+	go c.Run()
 
-	e1.Stop(base.StopOptDiscard)
-	e2.Stop(base.StopOptDiscard)
+	quit := make(chan os.Signal)
+	signal.Notify(quit, os.Interrupt, os.Kill)
+	<-quit
 
-	e1.WaitForStop()
-	e2.WaitForStop()
+	c.Stop()
 }
