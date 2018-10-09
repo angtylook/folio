@@ -5,17 +5,14 @@ import (
 	"log"
 	"net"
 	"sync"
-	"time"
 )
 
 const lengthByteSize = 2
 const writeQueueSize = 2048
 
-const opTimeoutDuration = time.Second * 5
 
 type MessageHandler interface {
 	OnMessage(msg []byte)
-	OnConnClose()
 }
 
 type writeMessage struct {
@@ -23,9 +20,8 @@ type writeMessage struct {
 }
 
 type Connection struct {
-	conn              net.Conn
-	handler           MessageHandler
-	OpTimeoutDuration time.Duration
+	conn    net.Conn
+	handler MessageHandler
 
 	readLenBuffer  []byte
 	writeLenBuffer []byte
@@ -38,14 +34,13 @@ type Connection struct {
 
 func NewConnection(c net.Conn, h MessageHandler) *Connection {
 	con := &Connection{
-		conn:              c,
-		handler:           h,
-		OpTimeoutDuration: opTimeoutDuration,
-		readLenBuffer:     make([]byte, lengthByteSize, lengthByteSize),
-		writeLenBuffer:    make([]byte, lengthByteSize, lengthByteSize),
-		writeQueue:        make(chan *writeMessage, writeQueueSize),
-		closed:            false,
-		done:              make(chan bool, 3),
+		conn:    c,
+		handler: h,
+		readLenBuffer:  make([]byte, lengthByteSize, lengthByteSize),
+		writeLenBuffer: make([]byte, lengthByteSize, lengthByteSize),
+		writeQueue:     make(chan *writeMessage, writeQueueSize),
+		closed:         false,
+		done:           make(chan bool, 3),
 	}
 
 	return con
@@ -105,7 +100,6 @@ func (c *Connection) readBuffer(buffer []byte) error {
 	length := len(buffer)
 	readSize := 0
 	for readSize < length {
-		c.conn.SetReadDeadline(time.Now().Add(c.OpTimeoutDuration))
 		n, err := c.conn.Read(buffer[readSize:])
 
 		if err != nil {
@@ -145,7 +139,6 @@ func (c *Connection) writeBuffer(buffer []byte) error {
 	length := len(buffer)
 	writeSize := 0
 	for writeSize < length {
-		c.conn.SetWriteDeadline(time.Now().Add(c.OpTimeoutDuration))
 		n, err := c.conn.Write(buffer[writeSize:])
 		if err != nil {
 			return err
