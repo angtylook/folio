@@ -56,17 +56,17 @@ func (f *Future) ReplyAt(executor *Executor, cb FutureFuncReply) *Future {
 	return f
 }
 
-func (f *Future) Execute(cb *FutureFunc) {
+func (f *Future) Execute(cb FutureFunc) {
 	go f.execute(cb)
 }
 
-func (f *Future) ExecuteAt(executor *Executor, cb *FutureFunc) {
+func (f *Future) ExecuteAt(executor *Executor, cb FutureFunc) {
 	executor.Post(func() {
 		f.execute(cb)
 	})
 }
 
-func (f *Future) execute(cb *FutureFunc) {
+func (f *Future) execute(cb FutureFunc) {
 	arg, err := cb()
 	if f.succFunc != nil {
 		f.onSucc(arg, err)
@@ -118,10 +118,11 @@ func (f *Future) onReply(arg interface{}, err error) {
 	}
 
 	f.replyExec.Post(func() {
-		f.replyExec(arg, err)
+		f.replyFunc(arg, err)
 	})
 }
 
-func (f *Future) Wait() {
-	_, _ := <-f.done
+func (f *Future) Wait() bool {
+	_, ok := <-f.done
+	return ok
 }
