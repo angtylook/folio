@@ -1,17 +1,17 @@
 package base
 
 type FutureFunc func() (interface{}, error)
-type FutureFuncSucc func(arg interface{})
+type FutureFuncSuccess func(arg interface{})
 type FutureFuncFail func(err error)
 type FutureFuncReply func(arg interface{}, err error)
 
 type Future struct {
-	succFunc  func(arg interface{})
-	succExec  *Executor
-	failFunc  func(err error)
-	failExec  *Executor
-	replyFunc func(arg interface{}, err error)
-	replyExec *Executor
+	successFunc func(arg interface{})
+	successExec *Executor
+	failFunc    func(err error)
+	failExec    *Executor
+	replyFunc   func(arg interface{}, err error)
+	replyExec   *Executor
 
 	done chan bool
 }
@@ -23,14 +23,14 @@ func NewFuture() *Future {
 	return f
 }
 
-func (f *Future) Succ(cb FutureFuncSucc) *Future {
-	f.succFunc = cb
+func (f *Future) Success(cb FutureFuncSuccess) *Future {
+	f.successFunc = cb
 	return f
 }
 
-func (f *Future) SuccAt(exector *Executor, cb FutureFuncSucc) *Future {
-	f.succExec = exector
-	f.succFunc = cb
+func (f *Future) SuccessAt(executor *Executor, cb FutureFuncSuccess) *Future {
+	f.successExec = executor
+	f.successFunc = cb
 	return f
 }
 
@@ -39,8 +39,8 @@ func (f *Future) Fail(cb FutureFuncFail) *Future {
 	return f
 }
 
-func (f *Future) FailAt(exector *Executor, cb FutureFuncFail) *Future {
-	f.failExec = exector
+func (f *Future) FailAt(executor *Executor, cb FutureFuncFail) *Future {
+	f.failExec = executor
 	f.failFunc = cb
 	return f
 }
@@ -68,8 +68,8 @@ func (f *Future) ExecuteAt(executor *Executor, cb FutureFunc) {
 
 func (f *Future) execute(cb FutureFunc) {
 	arg, err := cb()
-	if f.succFunc != nil {
-		f.onSucc(arg, err)
+	if f.successFunc != nil {
+		f.onSuccess(arg, err)
 	}
 	if f.failFunc != nil {
 		f.onFail(arg, err)
@@ -81,18 +81,18 @@ func (f *Future) execute(cb FutureFunc) {
 	close(f.done)
 }
 
-func (f *Future) onSucc(arg interface{}, err error) {
+func (f *Future) onSuccess(arg interface{}, err error) {
 	if err != nil {
 		return
 	}
 
-	if f.succExec == nil {
-		go f.succFunc(arg)
+	if f.successExec == nil {
+		go f.successFunc(arg)
 		return
 	}
 
-	f.succExec.Post(func() {
-		f.succFunc(arg)
+	f.successExec.Post(func() {
+		f.successFunc(arg)
 	})
 }
 

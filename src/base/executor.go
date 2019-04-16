@@ -1,16 +1,15 @@
 package base
 
 import (
+	"sync"
 	"time"
 )
 
 type Closure func()
 
-type ExecutorStopOpt bool
-
 const (
-	StopOptDiscard = false
-	StopOptRunAll  = true
+	kStopOptDiscard = false
+	kStopOptRunAll  = true
 )
 
 type Framer interface {
@@ -18,28 +17,43 @@ type Framer interface {
 }
 
 type Executor struct {
-	tasks chan Closure
-	stop  chan ExecutorStopOpt
+	tasks  chan Closure
+	stop   chan bool
+	closed int32
+	l      sync.Mutex
 }
 
 func NewExecutor(taskSize int) *Executor {
 	e := &Executor{
-		tasks: make(chan Closure, taskSize),
-		stop:  make(chan ExecutorStopOpt),
+		tasks:  make(chan Closure, taskSize),
+		stop:   make(chan bool),
+		closed: 0,
 	}
 	return e
 }
 
 func (e *Executor) Post(c Closure) {
+	e.l.Lock()
+	defer e.l.Unlock()
+	if e.closed == 1 {
+		return
+	}
+
 	e.tasks <- c
 }
 
 func (e *Executor) Dispatch(c Closure) {
+	e.l.Lock()
+	if e.closed == 1 {
+		e.l.Unlock()
+		return
+	}
 	signal := make(chan bool)
 	e.tasks <- func() {
 		c()
 		close(signal)
 	}
+	e.l.Unlock()
 	<-signal
 }
 
@@ -51,7 +65,7 @@ func (e *Executor) Start() {
 				task()
 			}
 		case opt := <-e.stop:
-			if opt != StopOptRunAll {
+			if opt != kStopOptRunAll {
 				close(e.stop)
 				return
 			}
@@ -82,7 +96,7 @@ func (e *Executor) StartWithFrame(framer Framer, d time.Duration) {
 				task()
 			}
 		case opt := <-e.stop:
-			if opt != StopOptRunAll {
+			if opt != kStopOptRunAll {
 				return
 			}
 
@@ -94,11 +108,32 @@ func (e *Executor) StartWithFrame(framer Framer, d time.Duration) {
 	}
 }
 
-func (e *Executor) Stop(opt ExecutorStopOpt) {
+func (e *Executor) Stop() {
+	e.l.Lock()
+	if e.closed == 1 {
+		e.l.Unlock()
+		return
+	}
+
+	e.closed = 1
 	close(e.tasks)
-	e.stop <- opt
+	e.l.Unlock()
+	e.stop <- kStopOptRunAll
 }
 
-func (e *Executor) WaitForStop() {
+func (e *Executor) StopNow() {
+	e.l.Lock()
+	if e.closed == 1 {
+		e.l.Unlock()
+		return
+	}
+
+	e.closed = 1
+	close(e.tasks)
+	e.l.Unlock()
+	e.stop <- kStopOptDiscard
+}
+
+func (e *Executor) Wait() {
 	<-e.stop
 }
