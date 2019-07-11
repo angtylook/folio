@@ -5,7 +5,7 @@ import (
 	"os"
 	"os/signal"
 
-	"server"
+	"wheel/server"
 )
 
 func main() {
