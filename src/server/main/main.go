@@ -19,7 +19,7 @@ func main() {
 
 	err := s.Init()
 	if err != nil {
-		log.Println("init server fail %v", err)
+		log.Printf("init server fail %v", err)
 		return
 	}
 

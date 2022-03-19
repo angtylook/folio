@@ -5,7 +5,7 @@ import (
 	"os"
 	"os/signal"
 
-	"client"
+	"wheel/client"
 )
 
 func main() {
@@ -18,7 +18,7 @@ func main() {
 
 	err := c.Init()
 	if err != nil {
-		log.Println("init client fail %v", err)
+		log.Printf("init client fail %v", err)
 		return
 	}
 
