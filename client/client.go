@@ -5,7 +5,7 @@ import (
 	//"net"
 	"time"
 
-	"wheel/base"
+	"github.com/angtylook/folio/base"
 )
 
 type Client struct {

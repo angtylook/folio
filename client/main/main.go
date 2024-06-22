@@ -5,7 +5,7 @@ import (
 	"os"
 	"os/signal"
 
-	"wheel/client"
+	"github.com/angtylook/folio/client"
 )
 
 func main() {

@@ -5,7 +5,7 @@ import (
 	"os"
 	"os/signal"
 
-	"wheel/server"
+	"github.com/angtylook/folio/server"
 )
 
 func main() {
@@ -25,7 +25,7 @@ func main() {
 
 	go s.Run()
 
-	quit := make(chan os.Signal)
+	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, os.Interrupt, os.Kill)
 	<-quit
 

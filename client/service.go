@@ -4,7 +4,8 @@ import (
 	"errors"
 	"log"
 	"time"
-	"wheel/base"
+
+	"github.com/angtylook/folio/base"
 )
 
 type Service struct {

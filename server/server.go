@@ -5,7 +5,7 @@ import (
 	"log"
 	"net"
 
-	"wheel/base"
+	"github.com/angtylook/folio/base"
 )
 
 type Server struct {

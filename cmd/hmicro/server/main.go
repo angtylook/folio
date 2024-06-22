@@ -3,7 +3,8 @@ package main
 import (
 	"context"
 	"fmt"
-	"hmicro/greeter"
+
+	"github.com/angtylook/folio/api/greeter"
 
 	"github.com/micro/go-micro/v2"
 )
